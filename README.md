@@ -250,7 +250,7 @@ $
 
 The skeleton code can be downloaded from Github at https://github.com/snu-csl/ca-pa4/. If you don't have the git utility, you need to install it first by performing "``sudo apt install git``" command.
 
-### Working on Macs (Experimental, tested on macOS Majave)
+### Working on Macs (Experimental, tested on macOS Mojave)
 
 The skeleton code has pre-built macOS binaries, ``yas-mac`` and ``ssim-mac``. If you want to work on macOS, you need to specify the use of these executable files in ``Makefile`` as follows:
 
