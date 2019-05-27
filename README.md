@@ -14,25 +14,25 @@ In addition to the original Y86-64 instructions, the PIPE-Stall processor suppor
 
 ![New instructions](http://csl.snu.ac.kr/courses/4190.308/2019-1/newinsts.png)
 
-### ``iaddq rA, rB        ; rB <- rB + V``
+### ``iaddq V, rB``        ; rB <- rB + V
 
-The ``iaddq`` instruction adds the 64-bit constant value ``V`` to register ``rB``. The condition code is set accordingly.
+The ``iaddq`` instruction adds the 64-bit constant value ``V`` to the register ``rB``. The condition code is set accordingly.
 
-### ``rmmovb rA, D(rB)    ; M``<sub>1</sub>``[rB+d] <- LSB(rA)``
+### ``rmmovb rA, D(rB)``   ; M<sub>1</sub>[rB+D] <- LSB(rA)
 
 The ``rmmovb`` instruction stores the LSB (Least Significant Byte) of the register ``rA`` into the memory address ``rB + D``, where ``D`` is a 64-bit constant. No condition code is affected.
 
-### ``mrmovb D(rB), rA    ; rA <- Zero_Extend(M``<sub>1</sub>``[rB+d])``
+### ``mrmovb D(rB), rA``   ; rA <- Zero_Extend(M<sub>1</sub>[rB+D])
 
-The ``mrmovb`` instruction reads a single byte from the memory address ``rB + D`` and stores it into the LSB (Least Significant Byte) of the register ``rA``. Other remaining bits in register ``rA`` are cleared to 0. No condition code is affected.
+The ``mrmovb`` instruction reads a single byte from the memory address ``rB + D`` and stores it into the LSB (Least Significant Byte) of the register ``rA``. Other remaining bits in the register ``rA`` are cleared to 0. No condition code is affected.
 
-### ``mulq rA, rB         ; rB <- rB * rA``
+### ``mulq rA, rB``        ; rB <- rB * rA
 
-The ``mulq`` instruction multiplies ``rA`` and ``rB`` and stores the result to register ``rB``. The condition code is set accordingly.
+The ``mulq`` instruction multiplies ``rA`` and ``rB`` and stores the result to the register ``rB``. The condition code is set accordingly.
 
-### ``divq rA, rB         ; rB <- rB / rA``
+### ``divq rA, rB``        ; rB <- rB / rA
 
-The ``divq`` instruction divides ``rB`` by ``rA`` and stores the result to register ``rB``. The result is the same as that of the integer division in C (i.e., non-integral results are truncated toward 0). When the divisor (the value of ``rA``) is zero, the result is set to ``TMin (= 0x8000000000000000)`` and the OF flag is set. Other ZF and SF flags are set according to the result (even when the divisor is zero).
+The ``divq`` instruction divides ``rB`` by ``rA`` and stores the result to the register ``rB``. The result is the same as that of the integer division in C (i.e., non-integral results are truncated toward 0). When the divisor (the value of ``rA``) is zero, the result is set to ``TMin (= 0x8000000000000000)`` and the OF flag is set. Other ZF and SF flags are set according to the result (even when the divisor is zero).
 
 ## The PIPE-Stall Processor
 
@@ -42,13 +42,14 @@ The original PIPE processor described in the textbook uses data forwarding whene
 
 ![Data hazard](http://csl.snu.ac.kr/courses/4190.308/2019-1/datahazard.png)
 
-Due to the data dependency on the ``%rax`` register, the pipeline is stalled for 3 ccyles (gray boxes) until the ``irmovq`` instruction writes the value to the ``%rax`` register in the W stage.
+Due to the data dependency on the ``%rax`` register, the pipeline is stalled for 3 cycles (gray boxes) until the ``irmovq`` instruction writes the value to the ``%rax`` register in the W stage.
 
 ### Load / use data hazard
 
-The load/use data hazard is treated in the same way as the data hazard shown above. The ``addq`` instruciton is stalled for 3 cycles (yellow boxes) until the value read from memory is written into the ``%rax`` register. In the above example, note that the ``mrmovq`` instruction is stalled for 3 cycles as well (gray boxes), because there is a data dependency on the ``%rdx`` register with the previous ``irmovq`` instruction.
-
 ![Load/use data hazard](http://csl.snu.ac.kr/courses/4190.308/2019-1/loaduse.png)
+
+The load/use data hazard is treated in the same way as the data hazard shown above. The ``addq`` instruction is stalled for 3 cycles (yellow boxes) until the value read from memory is written into the ``%rax`` register. In the above example, note that the ``mrmovq`` instruction is stalled for 3 cycles as well (gray boxes), because there is a data dependency on the ``%rdx`` register with the previous ``irmovq`` instruction.
+
 
 ### Procedure call / return
 
@@ -70,13 +71,13 @@ The above program will be executed in our PIPE-Stall processor as follows:
 
 ![Procedure call/return](http://csl.snu.ac.kr/courses/4190.308/2019-1/callret.png)
 
-First, the ``call`` instruction is stalled for 3 cycles (yellow boxes) until the location of the stack is written into the ``%rsp`` register by the ``irmovq`` instruction. The ``xorq`` instruction in the procedure immediately follows the ``call`` instruction because we supply the address of ``sub`` (``valC`` of the ``call`` instruction) to the next F stage.
-Second, the ``ret`` instruction is stalled for 2 ccyles (gray boxes) in the D stage because it has a data dependency with the previous ``call`` instruction for the ``%rsp`` register. It cannot proceed until the ``call`` instruction writes the modified value to the ``%rsp`` register.
-Finally, once the ``ret`` instruction resumes its execution, the F stage should be stalled until the return address is available (red boxes). The return address becomes available at the end of the M stage of the ``ret`` instruction, and this address is fed back to the fetch stage in the W stage of the ``ret`` instruction.
+First, the ``call`` instruction is stalled for 3 cycles (yellow boxes) until the location of the stack is written into the ``%rsp`` register by the ``irmovq`` instruction. The ``xorq`` instruction in the procedure ``sub`` immediately follows the ``call`` instruction because we supply the address of ``sub`` (``valC`` of the ``call`` instruction) to the next F stage.
+Second, the ``ret`` instruction is stalled for 2 cycles (gray boxes) in the D stage because it has a data dependency with the previous ``call`` instruction for the ``%rsp`` register. It cannot proceed until the ``call`` instruction writes the modified value to the ``%rsp`` register.
+Finally, once the ``ret`` instruction resumes its execution, the F stage should be stalled until the return address is available (red boxes). The return address becomes available at the end of the M stage of the ``ret`` instruction, and this address is fed back to the F stage in the W stage of the ``ret`` instruction.
 
 ### Mispredicted branch
 
-THe mispredicted branch is handled in the same way as the original PIPE processor. We also use the always-taken prediction, so the next instruction in the branch target are fetched immediately. The branch outcome is known at the end of the E stage in the conditional branch instruction.
+The mispredicted branch is handled in the same way as the original PIPE processor. We also use the always-taken prediction, so the next instruction in the branch target is fetched immediately. The branch outcome is known at the end of the E stage in the conditional branch instruction.
 
 When the branch is mispredicted, the following two instructions are turned into the ``nop`` instructions. Consider the following example.
 
@@ -93,20 +94,20 @@ The following diagram shows how the above program is executed in our PIPE-Stall 
 
 ![Mispredicted branch](http://csl.snu.ac.kr/courses/4190.308/2019-1/mispredict.png)
 
-The ``iaddq`` instruction is stalled for 3 cycles (yellow boxes) due to the data dependency on the ``%rax`` register with the previous ``irmovq`` instruction. As soon as the ``jg`` instruction is fetched on cycle 5, the next ``iaddq`` and ``jg`` instructions are fetched on cycle 6 and 7, respectively, assuming that the conditional branch is taken. However, when the first ``jg`` instruction reaches the execution stage on cycle 7, it is known that the branch is not taken. Hence, two instructions fetched on cycle 6 and 7 are turned into the ``nop`` instructions on cycle 8. Meanwhile, the original ``jg`` instruction supplies the address of the next instruction in the M stage so that the ``addq`` instruction is fetched on cycle 8.
+The ``iaddq`` instruction is stalled for 3 cycles (yellow boxes) due to the data dependency on the ``%rax`` register with the previous ``irmovq`` instruction. As soon as the ``jg`` instruction is fetched on cycle 5, the next ``iaddq`` and ``jg`` instructions are fetched on cycle 6 and 7, respectively, assuming that the conditional branch is taken. However, when the first ``jg`` instruction reaches the E stage on cycle 7, it is known that the branch is not taken. Hence, two instructions fetched on cycle 6 and 7 are turned into the ``nop`` instructions on cycle 8. Meanwhile, the original ``jg`` instruction supplies the address of the next instruction in the M stage so that the ``addq`` instruction is fetched on cycle 8.
 
 
 ## Problem specification
 
-YOur task is to rewrite the ``bmp_diag()`` function you have written in Project #3 to optimize its performance on the PIPE-Stall processor. The prototype of ``bmp_diag()`` is same as the one in Project #3:
+Your task is to rewrite the ``bmp_diag()`` function you have written in Project #3 to optimize its performance on the PIPE-Stall processor. The prototype of ``bmp_diag()`` is same as the one in Project #3:
 
 ```
     void bmp_diag (unsigned char *imgptr, long long width, long long height, long long gap);
 ```
 
-As in Project #3, four arguments are passed in ``%rdi``, ``%rsi``, ``%rdx``, and ``%rcx`` registers, respectively. THere is no limitation in the register use in this project. You can freely use all the registers available in the Y86-64 architecture (e.g., ``%rax``, ``%rbx``, ``%rcx``, ``%rdx``, ``%rsi``, ``%rdi``, ``%rbp``, ``%rsp``, ``%r8`` ~ ``%r14``). Remember that there is no ``%r15`` in Y86-64.
+As in Project #3, four arguments are passed in ``%rdi``, ``%rsi``, ``%rdx``, and ``%rcx`` registers, respectively. There is no limitation in the register use in this project. You can freely use all the registers available in the Y86-64 architecture (e.g., ``%rax``, ``%rbx``, ``%rcx``, ``%rdx``, ``%rsi``, ``%rdi``, ``%rbp``, ``%rsp``, ``%r8`` ~ ``%r14``). Remember that there is no ``%r15`` in Y86-64.
 
-The following figure shows the memory layout when your program is running. When the power is turned on, the PIPE-Stall processor begins its execution y fetching an instruction at ``0x0000``. The startup code first sets the stack pointer, initializes registers with arguments for ``bmp_diag()``, and calls the ``bmp_diag()`` function which is located at ``0x400``. The image data is stored in a memory region starting at ``0x1000``. Due to this layout, the maximum stack size is limited to about 709 bytes (``0x300`` - startup code size).
+The following figure shows the memory layout when your program is running. When the power is turned on, the PIPE-Stall processor begins its execution by fetching an instruction at ``0x0000``. The startup code first sets the stack pointer, initializes registers with arguments for ``bmp_diag()``, and calls the ``bmp_diag()`` function which is located at ``0x400``. The image data is stored in a memory region starting at ``0x1000``. Due to this layout, the maximum stack size is limited to about 709 bytes (``0x300`` - startup code size).
 
 ```
             0x0000 -> +-----------------------------------------+
@@ -135,7 +136,7 @@ The following figure shows the memory layout when your program is running. When 
                       +-----------------------------------------+
 ```
 
-The performance of your code will be measured by the total number of cycles to complete the given task. Note that our PIPE-Stall processor stalls for 3 cycles whenever there is a data dependency among instructions. Also, it has 2-cycle penalty for the mispredicted branch and 3-cycle penalty for the ``ret`` instruction. Considering these characteristics of the PIPE-Stall processor, you have to optimize the performance of ``bmp_diag()``. You may make any semantics perserving transformations to the ``bmp_diag()`` function such as reordering instructions. YOu may also find it useful to read about __loop unrolling__ in Section 5.8 of the textbook. Loop unrolling is a program transformation that reduces the number of iterations for a loop by increasing the number of elements computed on each iteration.
+The performance of your code will be measured by the total number of cycles to complete the given task. Note that our PIPE-Stall processor stalls for 3 cycles whenever there is a data dependency among instructions. Also, it has 2-cycle penalty for the mispredicted branch and 3-cycle penalty for the ``ret`` instruction. Considering these characteristics of the PIPE-Stall processor, you have to optimize the performance of ``bmp_diag()``. You may make any semantics perserving transformations to the ``bmp_diag()`` function such as reordering instructions. You may also find it useful to read about __loop unrolling__ in Section 5.8 of the textbook. Loop unrolling is a program transformation that reduces the number of iterations for a loop by increasing the number of elements computed on each iteration.
 
 ## Evaluation
 
@@ -145,7 +146,7 @@ To receive any credit in this project, your code must be correct first. The 30% 
 
 ### Part II: Performance (70 points)
 
-Once you pass all the test cases, you will get different amount of credits depending on the performance of your code. We will express the performance of your code in units of _cycles per pixels (CPP)_. THat is, if the simulated code requires _C_ cycles to on the PIPE-Stall processor to change _N_ pixels in the given BMP file, then CPP is _C/N_.
+Once you pass all the test cases, you will get different amount of credits depending on the performance of your code. We will express the performance of your code in units of _cycles per pixels (CPP)_. That is, if the simulated code requires _C_ cycles to complete on the PIPE-Stall processor to change _N_ pixels in the given BMP file, then CPP is _C/N_.
 
 Since some cycles are used to set up the call to ``bmp_diag()`` and to set up the loops, you will get different CPP values for different combinations of image heights, image widths, and the gap values. We will therefore evaluate the performance of your code by computing the average of the CPPs for different parameters. If your average CPP is _c_, then your remaining credit _S_ will be determined as follows:
 
@@ -171,7 +172,7 @@ Since some cycles are used to set up the call to ``bmp_diag()`` and to set up th
 
 ### Verifying your code
 
-You can use the sequential Y86-64 simulator called ``ssim`` to verify the logical correctness of your code. We provide you with the pre-built Linux binary for ``ssim`` that understands new ``iaddq``, ``rmmovb``, ``mrmovb``, ``mulq``, and ``divq`` instruction, and a sample image data long with the corresponding simulator output (``result.out``). THe output generated by ``ssim`` (with the option "``-s``") for the given image data should match the content of the ``result.out`` file. (Try "``make test``" to compare the result.) The actual number of cycles taken on the PIPE-Stall processor will be available when you run your code on the grading server.
+You can use the sequential Y86-64 simulator called ``ssim`` to verify the logical correctness of your code. We provide you with the pre-built Linux binary for ``ssim`` that understands new ``iaddq``, ``rmmovb``, ``mrmovb``, ``mulq``, and ``divq`` instructions, and a sample image data long with the corresponding simulator output (``result.out``). The output generated by ``ssim`` (with the option "``-s``") for the given image data should match the content of the ``result.out`` file. (Try "``make test``" to compare the result.) The actual number of cycles taken on the PIPE-Stall processor will be available when you run your code on the grading server.
 
 
 ## Skeleton code
@@ -259,7 +260,7 @@ The skeleton code can be downloaded from Github at https://github.com/snu-csl/ca
 
 * Your ``bmp_diag()`` implementation should leave the bytes in the padding area untouched.
 
-* There is no restriction in the register usage. You can freely use any of Y96-64 registers. Also, you can use stack for temporary storage, but the maximum stack size is limited to 709 bytes.
+* There is no restriction in the register usage. You can freely use any of Y86-64 registers. Also, you can use stack for temporary storage, but the maximum stack size is limited to 709 bytes.
 
 * The total number of cycles in the PIPE-Stall simulator is set to 10,000,000 cycles. If your program runs longer than this limit, it will be terminated.
 
