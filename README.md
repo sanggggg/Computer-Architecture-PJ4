@@ -250,6 +250,30 @@ $
 
 The skeleton code can be downloaded from Github at https://github.com/snu-csl/ca-pa4/. If you don't have the git utility, you need to install it first by performing "``sudo apt install git``" command.
 
+### Working on Macs (Experimental, tested on macOS Majave)
+
+The skeleton code has pre-built macOS binaries, ``yas-mac`` and ``ssim-mac``. If you want to work on macOS, you need to specify the use of these executable files in ``Makefile`` as follows:
+
+```
+...
+YAS    = ./yas-mac
+SSIM   = ./ssim-mac
+...
+```
+
+In addition, ``yas-mac`` requires the ``flex`` (lexical analyzer) library. The ``flex`` library can be installed using the Homebrew utility which is a package manager for Macs. If you don't have Homebrew yet, install it using the following command:
+
+```
+$ ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+```
+
+Now, the ``flex`` library can be installed by issuing the followign command:
+
+```
+$ brew install flex
+```
+
+
 ## Restrictions
 
 * The code size of ``bmp_diag()`` should be less than or equal to 1024 bytes. The ``bmp_diag()`` function starts at the address ``0x400``. Therefore the address of your code should be within ``0x800``.

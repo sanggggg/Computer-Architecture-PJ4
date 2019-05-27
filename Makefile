@@ -15,8 +15,8 @@
 
 CAT 	= /bin/cat
 
-YAS 	= ./yas
-SSIM 	= ./ssim 
+YAS 	= ./yas				# set to ./yas-mac on macOS
+SSIM 	= ./ssim			# set to ./ssim-mac on macOS
 SSIMFLAGS = -s
 
 TARGET	= bmptest.yo
