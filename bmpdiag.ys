@@ -21,9 +21,23 @@ bmp_diag:
 	#-----------------------------------------------------------------
 
 	# FILL HERE
-	# You are allowed to use any register supported by Y86-64 architecture
-	irmovq	$4, %rbx
+	# You are allowed to use any register supported by Y86-64 architecture	
+	rrmovq	%rdi, %r12
+	#set r12(imgptr)
+	rrmovq	%rdx, %r8
+	rrmovq	%rcx, %r9
+	iaddq	$-1, %r8
+	divq	%r9, %r8
+	mulq	%r9, %r8
+	subq	%rdx, %r8
+	irmovq	$-1, %rdi
+	subq	%r8, %rdi
+	cmove	%rcx, %rdi
 	irmovq	$3, %r8
+	mulq	%r8, %rdi
+	#set rdi(index)
+	irmovq	$3, %r8
+	irmovq	$4, %rbx
 	irmovq	$3, %rax
 	mulq	%rax, %rsi
 	andq	%rsi, %r8
@@ -39,14 +53,9 @@ bmp_diag:
 	#set r10(checker size)
 	rrmovq	%rdx, %r11
 	#set r11(height)
-	rrmovq	%rdi, %r12
-	#set r12(imgptr)
 	irmovq	$0, %r13
-	irmovq	$0xFF, %r14
+	irmovq	$0xff, %r14
 	#set r13,r14(color value)	
-	rrmovq	%r8, %rdi
-	#set rdi(index)
-	
 	#coloring
 LOOPSTART:
 	rrmovq	%r12, %rax
@@ -60,7 +69,7 @@ FIRST:
 	rmmovb	%r14, 2(%rax)
 	addq	%r8, %rax
 	subq	%r8, %rbx
-	jl	FIRST
+	jg	FIRST
 	
 	rrmovq	%r8, %rcx
 	subq	%rdi, %rcx
@@ -68,19 +77,22 @@ FIRST:
 	addq	%rcx, %rax
 	rrmovq	%r10, %rbx
 	subq	%rcx, %rbx
-
+		
 SECOND:
 	rmmovb	%r13, (%rax)
 	rmmovb	%r13, 1(%rax)
 	rmmovb	%r14, 2(%rax)
 	addq	%r8, %rax
 	subq	%r8, %rbx
-	jl	SECOND
+	jg	SECOND
 	
+	#DEBUG
+	#jmp	ENDING
+	#DEBUG.END
 	iaddq	$-1, %r11
 	je	ENDING
 	iaddq	$-3, %rdi
-	cmovl	%r8, %rdi
+	cmovle	%r8, %rdi
 	
 	addq	%r9, %r12
 	jmp	LOOPSTART
